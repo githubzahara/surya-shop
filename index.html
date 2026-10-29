@@ -44,7 +44,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const K='shopdata1',PH='0931134502',AC='1000132197613',EN='Sureya Global',AR='ثريا غلوبال';
 let S={products:[{id:1,n:'ስማርት ሰዓት',p:2500,q:15,e:'⌚'},{id:2,n:'ጆሮ ማዳመጫ',p:1200,q:30,e:'🎧'},{id:3,n:'የስልክ ቻርጀር',p:450,q:50,e:'🔌'},{id:4,n:'የላፕቶፕ ቦርሳ',p:1800,q:8,e:'🎒'}],orders:[],cfg:{name:'ሱረያ ግሎባል',email:'',pin:'',cur:'ብር'}};
 try{const r=localStorage.getItem(K);if(r)S=JSON.parse(r)}catch(e){}
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('ማከማቻ ሞልቷል፤ ፎቶዎችን ይቀንሱ')}};
 let page='store',auth=false,tries=0,lock=0,cart={};
 const PAGES=[['store','🛍️ ሱቅ'],['dash','📊 ዳሽቦርድ'],['prod','📦 ምርቶች'],['ord','🧾 ትዕዛዞች'],['set','⚙️ ቅንብር']];
 const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('hs:'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -52,7 +52,7 @@ const money=n=>Number(n).toLocaleString('en-US')+' '+esc(S.cfg.cur);
 function toast(x){const t=$('#t');t.textContent=x;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
 function go(p){page=p;view()}
 function view(){
-  $('#ttl').innerHTML=esc(S.cfg.name)+'<div style="font-size:13px;font-weight:400;opacity:.9">'+EN+' · <span dir="rtl" lang="ar">'+AR+'</span></div>';
+  $('#ttl').innerHTML=(S.cfg.logo&&/^data:image\//.test(S.cfg.logo)?'<img src="'+esc(S.cfg.logo)+'" alt="" style="height:30px;width:30px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-inline-end:8px">':'')+esc(S.cfg.name)+'<div style="font-size:13px;font-weight:400;opacity:.9">'+EN+' · <span dir="rtl" lang="ar">'+AR+'</span></div>';
   $('#nav').innerHTML=PAGES.map(([k,l])=>`<button class="${k===page?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
   const m=$('#m');
   if(page==='store')m.innerHTML=storeH();
@@ -63,7 +63,7 @@ function view(){
 function storeH(){
   const items=Object.entries(cart).map(([id,c])=>{const p=S.products.find(x=>x.id==id);return p?{p,c}:null}).filter(Boolean);
   const tot=items.reduce((a,i)=>a+i.p.p*i.c,0);
-  return `<div class="row card"><span>📞 ይደውሉ</span><a href="tel:+251931134502"><button class="b">${PH}</button></a></div><input placeholder="🔎 ፈልግ" oninput="srch(this.value)"><div class="grid">${S.products.map(p=>`<div class="card p" data-n="${esc(p.n.toLowerCase())}"><div class="e">${esc(p.e)}</div><b>${esc(p.n)}</b><div>${money(p.p)}</div><div class="mu">${p.q>0?'ቀሪ: '+p.q:'አልቋል'}</div><button class="b" ${p.q>0?'':'disabled'} onclick="add(${p.id})">ወደ ጋሪ +</button></div>`).join('')}</div>
+  return `<div class="row card"><span>📞 ይደውሉ</span><a href="tel:+251931134502"><button class="b">${PH}</button></a></div><input placeholder="🔎 ፈልግ" oninput="srch(this.value)"><div class="grid">${S.products.map(p=>`<div class="card p" data-n="${esc(p.n.toLowerCase())}">${p.img&&/^data:image\//.test(p.img)?'<img src="'+esc(p.img)+'" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:12px">':'<div class="e">'+esc(p.e)+'</div>'}<b>${esc(p.n)}</b><div>${money(p.p)}</div><div class="mu">${p.q>0?'ቀሪ: '+p.q:'አልቋል'}</div><button class="b" ${p.q>0?'':'disabled'} onclick="add(${p.id})">ወደ ጋሪ +</button></div>`).join('')}</div>
   <div class="card"><h3>🛒 ጋሪ</h3>${items.length?items.map(i=>`<div class="row"><span>${esc(i.p.n)} × ${i.c}</span><span>${money(i.p.p*i.c)} <button class="b g" onclick="rm(${i.p.id})">✕</button></span></div>`).join('')+`<h3>ጠቅላላ: ${money(tot)}</h3>
   <input id="cn" placeholder="ሙሉ ስም" maxlength="60" autocomplete="name"><input id="ce" type="email" placeholder="ኢሜል" maxlength="80" autocomplete="email"><input id="cp" type="tel" placeholder="ስልክ ቁጥር" maxlength="20" autocomplete="tel"><select id="cm"><option>ቴሌብር</option><option>ባንክ ማስተላለፍ</option><option>ሲደርስ ክፍያ</option></select><input id="cr" placeholder="የክፍያ ማረጋገጫ ቁጥር (አማራጭ)" maxlength="40"><div class="mu">💳 ${esc(S.cfg.pay||'ቴሌብር '+PH+' · የኢትዮጵያ ንግድ ባንክ ሂሳብ '+AC)}</div>
   <button class="b" onclick="order()">ትዕዛዝ ላክ ✉️</button>`:'<p class="mu">ጋሪው ባዶ ነው</p>'}</div>
@@ -108,12 +108,15 @@ function dashH(){
 }
 /* ---------- ምርቶች ---------- */
 function prodH(){
-  return `<div class="card"><h3>➕ አዲስ ምርት</h3><input id="pe" placeholder="አዶ (ለምሳሌ 📱)" maxlength="4"><input id="pn" placeholder="የምርት ስም" maxlength="60"><input id="pp" type="number" min="0" placeholder="ዋጋ"><input id="pq" type="number" min="0" placeholder="ብዛት"><button class="b" onclick="addP()">ጨምር</button></div>
-  ${S.products.map(p=>`<div class="card row"><span>${esc(p.e)} <b>${esc(p.n)}</b><br><span class="mu">${money(p.p)} · ቀሪ ${p.q}</span></span><span><button class="b" onclick="editQ(${p.id})">ብዛት</button> <button class="b g" onclick="delP(${p.id})">ሰርዝ</button></span></div>`).join('')}`;
+  return `<div class="card"><h3>➕ አዲስ ምርት</h3><input id="pe" placeholder="አዶ (ለምሳሌ 📱)" maxlength="4"><input id="pn" placeholder="የምርት ስም" maxlength="60"><input id="pp" type="number" min="0" placeholder="ዋጋ"><input id="pq" type="number" min="0" placeholder="ብዛት"><label class="mu">📷 የምርት ፎቶ (አማራጭ)</label><input id="pf" type="file" accept="image/*"><button class="b" onclick="addP()">ጨምር</button></div>
+  ${S.products.map(p=>`<div class="card row"><span>${p.img&&/^data:image\//.test(p.img)?'<img src="'+esc(p.img)+'" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px;vertical-align:middle">':esc(p.e)} <b>${esc(p.n)}</b><br><span class="mu">${money(p.p)} · ቀሪ ${p.q}</span></span><span><button class="b" onclick="editP(${p.id})">ዋጋ</button> <button class="b" onclick="chgImg(${p.id})">📷</button> <button class="b" onclick="editQ(${p.id})">ብዛት</button> <button class="b g" onclick="delP(${p.id})">ሰርዝ</button></span></div>`).join('')}`;
 }
 function addP(){const n=$('#pn').value.trim(),p=+$('#pp').value,q=+$('#pq').value;if(!n||!(p>=0)||!(q>=0)){toast('መረጃውን ያሟሉ');return}
-  S.products.push({id:Date.now(),n,p,q,e:$('#pe').value.trim()||'📦'});save();view()}
+  const f=$('#pf').files[0],mk=img=>{S.products.push({id:Date.now(),n,p,q,e:$('#pe').value.trim()||'📦',img});save();view()};f?pic(f,480,mk):mk('')}
 function delP(id){if(confirm('ይሰረዝ?')){S.products=S.products.filter(p=>p.id!=id);save();view()}}
+function pic(file,max,cb){if(!file||!/^image\//.test(file.type)||file.size>15e6){toast('ልክ ያልሆነ ፎቶ');return cb('')}const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};i.onerror=()=>{toast('ፎቶ አልተነበበም');cb('')};i.src=r.result};r.onerror=()=>cb('');r.readAsDataURL(file)}
+function editP(id){const p=S.products.find(x=>x.id==id),v=prompt('አዲስ ዋጋ',p.p);if(v!==null&&v!==''&&+v>=0){p.p=+v;save();view()}}
+function chgImg(id){const i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=()=>pic(i.files[0],480,img=>{if(!img)return;S.products.find(x=>x.id==id).img=img;save();view();toast('ፎቶ ተቀይሯል ✅')});i.click()}
 function editQ(id){const p=S.products.find(x=>x.id==id),v=prompt('አዲስ ብዛት',p.q);if(v!==null&&+v>=0){p.q=+v;save();view()}}
 /* ---------- ትዕዛዞች ---------- */
 function ordH(){
@@ -126,10 +129,10 @@ function ordH(){
 function setS(id,s){const o=S.orders.find(x=>x.id===id);if(o){o.s=s;save();toast('ተቀይሯል')}}
 /* ---------- ቅንብር ---------- */
 function setH(){
-  return `<div class="card"><h3>የሱቅ ቅንብር</h3><input id="sn" value="${esc(S.cfg.name)}" maxlength="50"><input id="se" type="email" value="${esc(S.cfg.email)}" placeholder="የባለቤት ኢሜል (ትዕዛዝ የሚደርስበት)"><input id="sc" value="${esc(S.cfg.cur)}" maxlength="8"><input id="spi" value="${esc(S.cfg.pay||'')}" placeholder="የክፍያ መመሪያ (ለምሳሌ ቴሌብር 09...)" maxlength="120"><input id="sp" type="password" placeholder="አዲስ ፒን (አማራጭ)"><button class="b" onclick="saveC()">አስቀምጥ</button></div>
+  return `<div class="card"><h3>የሱቅ ቅንብር</h3><input id="sn" value="${esc(S.cfg.name)}" maxlength="50"><input id="se" type="email" value="${esc(S.cfg.email)}" placeholder="የባለቤት ኢሜል (ትዕዛዝ የሚደርስበት)"><input id="sc" value="${esc(S.cfg.cur)}" maxlength="8"><input id="spi" value="${esc(S.cfg.pay||'')}" placeholder="የክፍያ መመሪያ (ለምሳሌ ቴሌብር 09...)" maxlength="120"><label class="mu">🖼️ አርማ (ሎጎ)</label><input id="sl" type="file" accept="image/*"><input id="sp" type="password" placeholder="አዲስ ፒን (አማራጭ)"><button class="b" onclick="saveC()">አስቀምጥ</button></div>
   <div class="card"><h3>ምትኬ</h3><button class="b" onclick="exp()">ምትኬ አውርድ</button> <button class="b" onclick="csv()">CSV</button> <button class="b" onclick="imp()">መልስ</button> <button class="b g" onclick="auth=false;go('store')">ውጣ</button></div>`;
 }
-async function saveC(){S.cfg.name=$('#sn').value.trim()||S.cfg.name;S.cfg.email=$('#se').value.trim();S.cfg.cur=$('#sc').value.trim()||'ብር';S.cfg.pay=$('#spi').value.trim();
+async function saveC(){const lf=$('#sl').files[0];if(lf)await new Promise(r=>pic(lf,128,img=>{if(img)S.cfg.logo=img;r()}));S.cfg.name=$('#sn').value.trim()||S.cfg.name;S.cfg.email=$('#se').value.trim();S.cfg.cur=$('#sc').value.trim()||'ብር';S.cfg.pay=$('#spi').value.trim();
   const p=$('#sp').value;if(p){if(p.length<6){toast('ፒን ቢያንስ 6');return}S.cfg.pin=await sha(p)}save();toast('ተቀምጧል ✅');view()}
 function csv(){const r=['id,date,customer,email,phone,total,pay,status',...S.orders.map(o=>[o.id,o.d,o.n,o.e,o.ph,o.tot,o.m||'',o.s].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','))].join('\n');navigator.clipboard&&navigator.clipboard.writeText(r).then(()=>toast('CSV ተቀድቷል'),()=>toast('አልተቻለም'))}
 function imp(){const v=prompt('ምትኬ JSON ለጥፍ');if(!v)return;try{const d=JSON.parse(v);if(!Array.isArray(d.products)||!Array.isArray(d.orders))throw 0;S.products=d.products.map(p=>({...p,id:+p.id||Date.now(),p:+p.p||0,q:+p.q||0}));S.orders=d.orders;S.cfg={...S.cfg,...d.cfg,pin:S.cfg.pin};save();toast('ተመልሷል ✅');view()}catch(e){toast('ልክ ያልሆነ ምትኬ')}}
