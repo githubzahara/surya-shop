@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>ሱረያ ግሎባል · Sureya Global · ثريا غلوبال</title>
+<style>
+:root{--bg:#f5f7f8;--card:#fff;--tx:#10201f;--mu:#5d6e6c;--pr:#0f766e;--pr2:#14b8a6;--bd:#dde5e4;--dg:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1413;--card:#142120;--tx:#e7f1ef;--mu:#8fa5a2;--bd:#233836;--dg:#ff7b6b}}
+:root[data-theme="dark"]{--bg:#0c1413;--card:#142120;--tx:#e7f1ef;--mu:#8fa5a2;--bd:#233836;--dg:#ff7b6b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,"Noto Sans Ethiopic","Nyala",sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:linear-gradient(135deg,var(--pr),var(--pr2));color:#fff;padding:12px 14px}
+header h1{margin:0;font-size:18px}
+nav{display:flex;gap:6px;overflow-x:auto;margin-top:8px}
+nav button{flex:none;border:0;border-radius:20px;padding:7px 14px;background:rgba(255,255,255,.18);color:#fff;font:inherit;cursor:pointer}
+nav button.on{background:#fff;color:var(--pr);font-weight:700}
+main{max-width:900px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.p{text-align:center}.p .e{font-size:40px}
+.p b{display:block}.mu{color:var(--mu);font-size:13px}
+button.b{border:0;border-radius:12px;padding:9px 14px;background:var(--pr);color:#fff;font:inherit;cursor:pointer}
+button.g{background:transparent;color:var(--dg);border:1px solid var(--dg)}
+input,select{width:100%;padding:10px;margin:4px 0;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.st{display:grid;grid-template-columns:1fr 1fr;gap:10px}.st .card{margin:0}.st b{font-size:22px;color:var(--pr)}
+.sc{overflow-x:auto}
+#t{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--pr);color:#fff;padding:10px 18px;border-radius:20px;display:none;z-index:9}
+</style>
+</head>
+<body>
+<header><h1 id="ttl"></h1><nav id="nav"></nav></header>
+<main id="m"></main>
+<div id="t"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const K='shopdata1',PH='0931134502',AC='1000132197613',EN='Sureya Global',AR='ثريا غلوبال';
+let S={products:[{id:1,n:'ስማርት ሰዓት',p:2500,q:15,e:'⌚'},{id:2,n:'ጆሮ ማዳመጫ',p:1200,q:30,e:'🎧'},{id:3,n:'የስልክ ቻርጀር',p:450,q:50,e:'🔌'},{id:4,n:'የላፕቶፕ ቦርሳ',p:1800,q:8,e:'🎒'}],orders:[],cfg:{name:'ሱረያ ግሎባል',email:'',pin:'',cur:'ብር'}};
+try{const r=localStorage.getItem(K);if(r)S=JSON.parse(r)}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+let page='store',auth=false,tries=0,lock=0,cart={};
+const PAGES=[['store','🛍️ ሱቅ'],['dash','📊 ዳሽቦርድ'],['prod','📦 ምርቶች'],['ord','🧾 ትዕዛዞች'],['set','⚙️ ቅንብር']];
+const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('hs:'+s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const money=n=>Number(n).toLocaleString('en-US')+' '+esc(S.cfg.cur);
+function toast(x){const t=$('#t');t.textContent=x;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+function go(p){page=p;view()}
+function view(){
+  $('#ttl').innerHTML=esc(S.cfg.name)+'<div style="font-size:13px;font-weight:400;opacity:.9">'+EN+' · <span dir="rtl" lang="ar">'+AR+'</span></div>';
+  $('#nav').innerHTML=PAGES.map(([k,l])=>`<button class="${k===page?'on':''}" onclick="go('${k}')">${l}</button>`).join('');
+  const m=$('#m');
+  if(page==='store')m.innerHTML=storeH();
+  else if(!auth)m.innerHTML=loginH();
+  else m.innerHTML=({dash:dashH,prod:prodH,ord:ordH,set:setH})[page]();
+}
+/* ---------- ሱቅ ---------- */
+function storeH(){
+  const items=Object.entries(cart).map(([id,c])=>{const p=S.products.find(x=>x.id==id);return p?{p,c}:null}).filter(Boolean);
+  const tot=items.reduce((a,i)=>a+i.p.p*i.c,0);
+  return `<div class="row card"><span>📞 ይደውሉ</span><a href="tel:+251931134502"><button class="b">${PH}</button></a></div><input placeholder="🔎 ፈልግ" oninput="srch(this.value)"><div class="grid">${S.products.map(p=>`<div class="card p" data-n="${esc(p.n.toLowerCase())}"><div class="e">${esc(p.e)}</div><b>${esc(p.n)}</b><div>${money(p.p)}</div><div class="mu">${p.q>0?'ቀሪ: '+p.q:'አልቋል'}</div><button class="b" ${p.q>0?'':'disabled'} onclick="add(${p.id})">ወደ ጋሪ +</button></div>`).join('')}</div>
+  <div class="card"><h3>🛒 ጋሪ</h3>${items.length?items.map(i=>`<div class="row"><span>${esc(i.p.n)} × ${i.c}</span><span>${money(i.p.p*i.c)} <button class="b g" onclick="rm(${i.p.id})">✕</button></span></div>`).join('')+`<h3>ጠቅላላ: ${money(tot)}</h3>
+  <input id="cn" placeholder="ሙሉ ስም" maxlength="60" autocomplete="name"><input id="ce" type="email" placeholder="ኢሜል" maxlength="80" autocomplete="email"><input id="cp" type="tel" placeholder="ስልክ ቁጥር" maxlength="20" autocomplete="tel"><select id="cm"><option>ቴሌብር</option><option>ባንክ ማስተላለፍ</option><option>ሲደርስ ክፍያ</option></select><input id="cr" placeholder="የክፍያ ማረጋገጫ ቁጥር (አማራጭ)" maxlength="40"><div class="mu">💳 ${esc(S.cfg.pay||'ቴሌብር '+PH+' · የኢትዮጵያ ንግድ ባንክ ሂሳብ '+AC)}</div>
+  <button class="b" onclick="order()">ትዕዛዝ ላክ ✉️</button>`:'<p class="mu">ጋሪው ባዶ ነው</p>'}</div>
+  <div class="card"><h3>📍 ትዕዛዝ ተከታተል</h3><input id="tc" placeholder="የትዕዛዝ ቁጥር"><input id="te" type="email" placeholder="ኢሜል"><button class="b" onclick="trk()">ፈትሽ</button></div>`;
+}
+function add(id){const p=S.products.find(x=>x.id==id);if((cart[id]||0)<p.q)cart[id]=(cart[id]||0)+1;else toast('ከሚገኘው በላይ አይቻልም');view()}
+function rm(id){delete cart[id];view()}
+function order(){
+  const n=$('#cn').value.trim(),e=$('#ce').value.trim(),ph=$('#cp').value.trim();
+  if(!n||!/^\S+@\S+\.\S+$/.test(e)||ph.length<7){toast('ስም፣ ትክክለኛ ኢሜል እና ስልክ ያስገቡ');return}
+  const its=[];let tot=0;
+  for(const [id,c] of Object.entries(cart)){const p=S.products.find(x=>x.id==id);if(!p||c>p.q)continue;p.q-=c;its.push({n:p.n,c,p:p.p});tot+=p.p*c}
+  if(!its.length)return;
+  const o={id:Date.now().toString(36).toUpperCase(),d:new Date().toISOString(),its,tot,n,e,ph,m:$('#cm').value,r:$('#cr').value.trim(),s:'አዲስ'};
+  S.orders.unshift(o);save();cart={};
+  if(S.cfg.email){const body=`ትዕዛዝ #${o.id}\n${its.map(i=>i.n+' × '+i.c).join('\n')}\nጠቅላላ: ${tot} ${S.cfg.cur}\n\nደንበኛ: ${n}\nኢሜል: ${e}\nስልክ: ${ph}\nክፍያ: ${o.m}${o.r?' ማረጋገጫ: '+o.r:''}`;
+    location.href='mailto:'+encodeURIComponent(S.cfg.email)+'?subject='+encodeURIComponent('አዲስ ትዕዛዝ #'+o.id)+'&body='+encodeURIComponent(body)}
+  toast('ትዕዛዝዎ ተቀብሏል ✅ #'+o.id);view()
+}
+function srch(v){v=v.toLowerCase();document.querySelectorAll('[data-n]').forEach(c=>c.style.display=c.dataset.n.includes(v)?'':'none')}
+function trk(){const id=$('#tc').value.trim().toUpperCase(),e=$('#te').value.trim().toLowerCase();const o=S.orders.find(x=>x.id===id&&x.e.toLowerCase()===e);toast(o?'ሁኔታ: '+o.s:'ትዕዛዝ አልተገኘም')}
+/* ---------- መግቢያ ---------- */
+function loginH(){
+  const first=!S.cfg.pin;
+  return `<div class="card"><h3>${first?'🔐 የአስተዳዳሪ ፒን ይፍጠሩ (ቢያንስ 6 ቁጥር)':'🔐 የአስተዳዳሪ መግቢያ'}</h3><input id="pin" type="password" inputmode="numeric" placeholder="ፒን" autocomplete="off"><button class="b" onclick="login()">${first?'ፍጠር':'ግባ'}</button></div>`;
+}
+async function login(){
+  const v=$('#pin').value;
+  if(Date.now()<lock){toast('ለጊዜው ተቆልፏል፣ ቆይተው ይሞክሩ');return}
+  if(!S.cfg.pin){if(v.length<6){toast('ፒን ቢያንስ 6 ቁምፊ');return}S.cfg.pin=await sha(v);save();auth=true;return view()}
+  if(await sha(v)===S.cfg.pin){auth=true;tries=0;view()}
+  else{tries++;if(tries>=5){lock=Date.now()+60000;tries=0}toast('ፒን ትክክል አይደለም')}
+}
+/* ---------- ዳሽቦርድ ---------- */
+function dashH(){
+  const rev=S.orders.reduce((a,o)=>a+o.tot,0),low=S.products.filter(p=>p.q<=5).length;
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(Date.now()-(6-i)*864e5).toDateString();return S.orders.filter(o=>new Date(o.d).toDateString()===d).reduce((a,o)=>a+o.tot,0)});
+  const mx=Math.max(...days,1);
+  const bars=days.map((v,i)=>{const h=v/mx*100;return `<rect x="${i*40+8}" y="${110-h}" width="26" height="${h}" rx="5" fill="var(--pr2)"/><text x="${i*40+21}" y="124" font-size="10" text-anchor="middle" fill="var(--mu)">${i+1}</text>`}).join('');
+  return `<div class="st"><div class="card"><span class="mu">ጠቅላላ ገቢ</span><br><b>${money(rev)}</b></div><div class="card"><span class="mu">ትዕዛዞች</span><br><b>${S.orders.length}</b></div><div class="card"><span class="mu">ምርቶች</span><br><b>${S.products.length}</b></div><div class="card"><span class="mu">ሊያልቁ የተቃረቡ</span><br><b>${low}</b></div></div>
+  ${low?'<div class="card"><h3>⚠️ ሊያልቁ የተቃረቡ</h3>'+S.products.filter(p=>p.q<=5).map(p=>esc(p.n)+' ('+p.q+')').join('፣ ')+'</div>':''}<div class="card sc"><h3>የ7 ቀን ሽያጭ</h3><svg viewBox="0 0 290 130" width="100%" height="150">${bars}</svg></div>`;
+}
+/* ---------- ምርቶች ---------- */
+function prodH(){
+  return `<div class="card"><h3>➕ አዲስ ምርት</h3><input id="pe" placeholder="አዶ (ለምሳሌ 📱)" maxlength="4"><input id="pn" placeholder="የምርት ስም" maxlength="60"><input id="pp" type="number" min="0" placeholder="ዋጋ"><input id="pq" type="number" min="0" placeholder="ብዛት"><button class="b" onclick="addP()">ጨምር</button></div>
+  ${S.products.map(p=>`<div class="card row"><span>${esc(p.e)} <b>${esc(p.n)}</b><br><span class="mu">${money(p.p)} · ቀሪ ${p.q}</span></span><span><button class="b" onclick="editQ(${p.id})">ብዛት</button> <button class="b g" onclick="delP(${p.id})">ሰርዝ</button></span></div>`).join('')}`;
+}
+function addP(){const n=$('#pn').value.trim(),p=+$('#pp').value,q=+$('#pq').value;if(!n||!(p>=0)||!(q>=0)){toast('መረጃውን ያሟሉ');return}
+  S.products.push({id:Date.now(),n,p,q,e:$('#pe').value.trim()||'📦'});save();view()}
+function delP(id){if(confirm('ይሰረዝ?')){S.products=S.products.filter(p=>p.id!=id);save();view()}}
+function editQ(id){const p=S.products.find(x=>x.id==id),v=prompt('አዲስ ብዛት',p.q);if(v!==null&&+v>=0){p.q=+v;save();view()}}
+/* ---------- ትዕዛዞች ---------- */
+function ordH(){
+  if(!S.orders.length)return '<div class="card mu">እስካሁን ትዕዛዝ የለም</div>';
+  return S.orders.map(o=>`<div class="card"><div class="row"><b>#${esc(o.id)}</b><span class="mu">${new Date(o.d).toLocaleString('en-GB')}</span></div>
+  <div>${o.its.map(i=>esc(i.n)+' × '+i.c).join('، ')}</div><div><b>${money(o.tot)}</b> · ${esc(o.n)} · ${esc(o.ph)}</div><div class="mu">💳 ${esc(o.m||'')} ${esc(o.r||'')}</div>
+  <div class="row"><select onchange="setS('${esc(o.id)}',this.value)">${['አዲስ','በሂደት','ተልኳል','ተጠናቋል','ተሰርዟል'].map(s=>`<option ${s===o.s?'selected':''}>${s}</option>`).join('')}</select>
+  <a href="mailto:${encodeURIComponent(o.e)}?subject=${encodeURIComponent('ስለ ትዕዛዝዎ #'+o.id)}"><button class="b">✉️ ኢሜል</button></a></div></div>`).join('');
+}
+function setS(id,s){const o=S.orders.find(x=>x.id===id);if(o){o.s=s;save();toast('ተቀይሯል')}}
+/* ---------- ቅንብር ---------- */
+function setH(){
+  return `<div class="card"><h3>የሱቅ ቅንብር</h3><input id="sn" value="${esc(S.cfg.name)}" maxlength="50"><input id="se" type="email" value="${esc(S.cfg.email)}" placeholder="የባለቤት ኢሜል (ትዕዛዝ የሚደርስበት)"><input id="sc" value="${esc(S.cfg.cur)}" maxlength="8"><input id="spi" value="${esc(S.cfg.pay||'')}" placeholder="የክፍያ መመሪያ (ለምሳሌ ቴሌብር 09...)" maxlength="120"><input id="sp" type="password" placeholder="አዲስ ፒን (አማራጭ)"><button class="b" onclick="saveC()">አስቀምጥ</button></div>
+  <div class="card"><h3>ምትኬ</h3><button class="b" onclick="exp()">ምትኬ አውርድ</button> <button class="b" onclick="csv()">CSV</button> <button class="b" onclick="imp()">መልስ</button> <button class="b g" onclick="auth=false;go('store')">ውጣ</button></div>`;
+}
+async function saveC(){S.cfg.name=$('#sn').value.trim()||S.cfg.name;S.cfg.email=$('#se').value.trim();S.cfg.cur=$('#sc').value.trim()||'ብር';S.cfg.pay=$('#spi').value.trim();
+  const p=$('#sp').value;if(p){if(p.length<6){toast('ፒን ቢያንስ 6');return}S.cfg.pin=await sha(p)}save();toast('ተቀምጧል ✅');view()}
+function csv(){const r=['id,date,customer,email,phone,total,pay,status',...S.orders.map(o=>[o.id,o.d,o.n,o.e,o.ph,o.tot,o.m||'',o.s].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','))].join('\n');navigator.clipboard&&navigator.clipboard.writeText(r).then(()=>toast('CSV ተቀድቷል'),()=>toast('አልተቻለም'))}
+function imp(){const v=prompt('ምትኬ JSON ለጥፍ');if(!v)return;try{const d=JSON.parse(v);if(!Array.isArray(d.products)||!Array.isArray(d.orders))throw 0;S.products=d.products.map(p=>({...p,id:+p.id||Date.now(),p:+p.p||0,q:+p.q||0}));S.orders=d.orders;S.cfg={...S.cfg,...d.cfg,pin:S.cfg.pin};save();toast('ተመልሷል ✅');view()}catch(e){toast('ልክ ያልሆነ ምትኬ')}}
+function exp(){const d={...S,cfg:{...S.cfg,pin:''}};navigator.clipboard&&navigator.clipboard.writeText(JSON.stringify(d)).then(()=>toast('ምትኬ ተቀድቷል'),()=>toast('መቅዳት አልተቻለም'))}
+view();
+</script>
+<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
+</body>
+</html>
