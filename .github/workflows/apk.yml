@@ -2,10 +2,23 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore: ['products.json']
   workflow_dispatch:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: shop
+            src: index.html
+            id: com.sureya.shop
+            title: Sureya Global
+          - name: admin
+            src: admin.html
+            id: com.sureya.global
+            title: Sureya Admin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,19 +28,41 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Build debug APK with Capacitor
+      - name: Keep the same signing key between builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: debug-keystore-${{ matrix.name }}-v1
+      - name: Prepare Capacitor app
         run: |
           mkdir -p www
-          cp index.html manifest.webmanifest sw.js icon-192.png icon-512.png www/
+          cp ${{ matrix.src }} www/index.html
+          cp manifest.webmanifest sw.js icon-192.png icon-512.png www/
           npm init -y
           npm i @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Sureya Global" com.sureya.global --web-dir=www
+          npx cap init "${{ matrix.title }}" ${{ matrix.id }} --web-dir=www
           npx cap add android
           npx cap sync android
+      - name: App icon from logo
+        continue-on-error: true
+        run: |
+          pip install pillow
+          python3 - <<'PY'
+          from PIL import Image
+          src=Image.open('icon-512.png').convert('RGBA')
+          for d,s,f in [('mdpi',48,108),('hdpi',72,162),('xhdpi',96,216),('xxhdpi',144,324),('xxxhdpi',192,432)]:
+              p='android/app/src/main/res/mipmap-'+d+'/'
+              src.resize((s,s),Image.LANCZOS).save(p+'ic_launcher.png')
+              src.resize((s,s),Image.LANCZOS).save(p+'ic_launcher_round.png')
+              src.resize((f,f),Image.LANCZOS).save(p+'ic_launcher_foreground.png')
+          PY
+          sed -i 's/#FFFFFF/#04122E/I' android/app/src/main/res/values/ic_launcher_background.xml
+      - name: Gradle build
+        run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: sureya-apk
+          name: sureya-${{ matrix.name }}-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
